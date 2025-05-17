@@ -5,12 +5,15 @@ import (
 	"log"
 	"math"
 	"os/exec"
+	"sort"
 	"strings"
 )
 
+// Math
+
 // Naively interpolate (and extrapolate) the value of a curve at x.
 func interpolate(x int, curve map[int]int) int {
-	found_0, found_1 := false, false
+	found0, found1 := false, false
 	x0, y0 := math.MinInt, -1
 	x1, y1 := math.MaxInt, -1
 
@@ -19,30 +22,30 @@ func interpolate(x int, curve map[int]int) int {
 	}
 
 	// Find anchors to left and right of x
-	for curr_x, curr_y := range curve {
+	for currX, currY := range curve {
 		// Return anchor value if we match the anchor exactly
-		if curr_x == x {
-			return curr_y
+		if currX == x {
+			return currY
 
-		} else if curr_x < x {
-			if curr_x > x0 {
-				found_0 = true
-				x0, y0 = curr_x, curr_y
+		} else if currX < x {
+			if currX > x0 {
+				found0 = true
+				x0, y0 = currX, currY
 			}
 
-			// curr_x > x
+			// currX > x
 		} else {
-			if curr_x < x1 {
-				found_1 = true
-				x1, y1 = curr_x, curr_y
+			if currX < x1 {
+				found1 = true
+				x1, y1 = currX, currY
 			}
 		}
 	}
 
 	// Return anchor if we only found 1
-	if found_0 && !found_1 {
+	if found0 && !found1 {
 		return y0
-	} else if !found_0 && found_1 {
+	} else if !found0 && found1 {
 		return y1
 	}
 
@@ -51,12 +54,25 @@ func interpolate(x int, curve map[int]int) int {
 }
 
 // Min and max functions joined together. Good for keeping numbers within a range.
-func minmax(min_x int, x int, max_x int) int {
-	return max(min_x, min(x, max_x))
+func minMax(minX int, x int, maxX int) int {
+	return max(minX, min(x, maxX))
 }
 
+// Lists/Maps
+
+func getSortedIndexes(data *map[int]int) []int {
+	indexes := make([]int, 0)
+	for key := range *data {
+		indexes = append(indexes, key)
+	}
+	sort.Ints(indexes)
+	return indexes
+}
+
+// OS
+
 // Execute a command and return stdout, stderr
-func run_command(command []string) (string, string) {
+func runCommand(command []string) (string, string) {
 	// Setup command
 	process := exec.Command(command[0], command[1:]...)
 	var stdout bytes.Buffer
@@ -66,7 +82,7 @@ func run_command(command []string) (string, string) {
 	// Run it
 	err := process.Run()
 	if err != nil {
-		log.Panic("Failed to execute %s: %s", command, err)
+		log.Panicf("Failed to execute %s: %s", command, err)
 	}
 	if strings.Contains(stderr.String(), "ERROR") {
 		log.Panicf(

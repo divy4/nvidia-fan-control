@@ -1,12 +1,12 @@
 package main
 
 type AsciiGraph struct {
-	grid_size     int
-	iteration     int
-	min           int
-	max           int
-	runes         []rune
-	rune_priority string
+	gridSize     int
+	iteration    int
+	min          int
+	max          int
+	runes        []rune
+	runePriority string
 }
 
 const BORDER_RUNE = '#'
@@ -15,19 +15,19 @@ const DEFAULT_RUNE = ' '
 
 var DIGIT_RUNES = [...]rune{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'}
 
-func create_ascii_graph(
-	min_location int,
-	max_location int,
-	grid_size int,
-	rune_priority string,
+func createAsciiGraph(
+	minLocation int,
+	maxLocation int,
+	gridSize int,
+	runePriority string,
 ) AsciiGraph {
 	graph := AsciiGraph{
-		grid_size:     grid_size,
-		iteration:     -2,
-		min:           min_location,
-		max:           max_location,
-		runes:         make([]rune, max_location-min_location+1),
-		rune_priority: rune_priority,
+		gridSize:     gridSize,
+		iteration:    -2,
+		min:          minLocation,
+		max:          maxLocation,
+		runes:        make([]rune, maxLocation-minLocation+1),
+		runePriority: runePriority,
 	}
 	graph.reset()
 	return graph
@@ -36,7 +36,7 @@ func create_ascii_graph(
 func (graph *AsciiGraph) reset() {
 	// Keep track of how many times the line has been reset
 	graph.iteration++
-	is_grid_line := graph.iteration%graph.grid_size == 0
+	isGridLine := graph.iteration%graph.gridSize == 0
 
 	size := graph.max - graph.min + 1
 
@@ -44,8 +44,8 @@ func (graph *AsciiGraph) reset() {
 	for i := range size {
 		location := i + graph.min
 
-		// Draw a grid line every graph.grid_size lines
-		if is_grid_line {
+		// Draw a grid line every graph.gridSize lines
+		if isGridLine {
 			if i == 0 || i == size-1 {
 				graph.runes[i] = BORDER_RUNE
 			} else if location%10 == 0 {
@@ -65,9 +65,9 @@ func (graph *AsciiGraph) reset() {
 	}
 }
 
-func (graph *AsciiGraph) set_rune(location int, char rune) {
-	index := minmax(graph.min, location, graph.max) - graph.min
-	for _, c := range graph.rune_priority {
+func (graph *AsciiGraph) setRune(location int, char rune) {
+	index := minMax(graph.min, location, graph.max) - graph.min
+	for _, c := range graph.runePriority {
 		// Don't change anything if the current rune has higher priority
 		switch c {
 		// Skip if the current rune has higher priority

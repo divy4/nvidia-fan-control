@@ -6,37 +6,24 @@ import (
 	"time"
 )
 
-// Public types
-
-type Fan struct {
-	gpu_id        int
-	min_speed     int
-	max_speed     int
-	control_curve FanCurve
-}
-
-type FanCurve map[int]int
-
 type FanController struct {
 	gpus  map[int]FanControllerGpu
 	fans  map[int]FanControllerFan
 	graph AsciiGraph
 }
 
-// Internal types
-
 type FanControllerGpu struct {
 	temperature int
 }
 
 type FanControllerFan struct {
-	gpu_id        int
-	min_speed     int
-	max_speed     int
-	current_speed int
-	target_speed  int
+	gpuId        int
+	minSpeed     int
+	maxSpeed     int
+	currentSpeed int
+	targetSpeed  int
 	// Map of gpu temp -> target fan speed
-	control_curve map[int]int
+	controlCurve map[int]int
 }
 
 const GPU_TEMP_RUNE = '|'
@@ -44,41 +31,41 @@ const FAN_SPEED_RUNE = ':'
 const GRAPH_RUNE_PRIORITY = "|:"
 const GRID_SIZE = 10
 
-func create_fan_controller(fans map[int]Fan, graph_min int, graph_max int) FanController {
+func createFanController(fans map[int]ConfigFan, graphMin int, graphMax int) FanController {
 	controller := FanController{
 		gpus:  map[int]FanControllerGpu{},
 		fans:  map[int]FanControllerFan{},
-		graph: create_ascii_graph(graph_min, graph_max, GRID_SIZE, GRAPH_RUNE_PRIORITY),
+		graph: createAsciiGraph(graphMin, graphMax, GRID_SIZE, GRAPH_RUNE_PRIORITY),
 	}
-	for fan_id, fan := range fans {
-		controller.gpus[fan.gpu_id] = FanControllerGpu{}
-		controller.fans[fan_id] = FanControllerFan{
-			gpu_id:        fan.gpu_id,
-			min_speed:     fan.min_speed,
-			max_speed:     fan.max_speed,
-			target_speed:  fan.min_speed,
-			control_curve: fan.control_curve,
+	for fanId, fan := range fans {
+		controller.gpus[fan.GpuId] = FanControllerGpu{}
+		controller.fans[fanId] = FanControllerFan{
+			gpuId:        fan.GpuId,
+			minSpeed:     fan.MinSpeed,
+			maxSpeed:     fan.MaxSpeed,
+			targetSpeed:  fan.MinSpeed,
+			controlCurve: fan.ControlCurve,
 		}
 	}
 	return controller
 }
 
 func (controller *FanController) run() {
-	defer controller.disable_fan_control()
-	controller.enable_fan_control()
-	controller.print_stats_headers()
+	defer controller.disableFanControl()
+	controller.enableFanControl()
+	controller.printStatsHeaders()
 	for {
-		controller.update_stats()
-		controller.calculate_target_fan_speeds()
-		controller.push_target_fan_speeds()
-		controller.print_stats()
+		controller.updateStats()
+		controller.calculateTargetFanSpeeds()
+		controller.pushTargetFanSpeeds()
+		controller.printStats()
 		time.Sleep(1 * time.Second)
 	}
 }
 
 // I/O
 
-func (controller *FanController) print_stats_headers() {
+func (controller *FanController) printStatsHeaders() {
 	headers := make([]string, len(controller.gpus)+len(controller.fans)*2+1)
 	i := 0
 	for id, _ := range controller.gpus {
@@ -97,7 +84,7 @@ func (controller *FanController) print_stats_headers() {
 	fmt.Println(strings.Join(headers, ","))
 }
 
-func (controller *FanController) print_stats() {
+func (controller *FanController) printStats() {
 	// Reset graph
 	controller.graph.reset()
 
@@ -107,18 +94,18 @@ func (controller *FanController) print_stats() {
 	// GPU temp
 	for _, gpu := range controller.gpus {
 		values[i] = fmt.Sprintf("%3d", gpu.temperature)
-		controller.graph.set_rune(gpu.temperature, GPU_TEMP_RUNE)
+		controller.graph.setRune(gpu.temperature, GPU_TEMP_RUNE)
 		i++
 	}
 	// Fan current speed
 	for _, fan := range controller.fans {
-		values[i] = fmt.Sprintf("%3d", fan.current_speed)
-		controller.graph.set_rune(fan.current_speed, FAN_SPEED_RUNE)
+		values[i] = fmt.Sprintf("%3d", fan.currentSpeed)
+		controller.graph.setRune(fan.currentSpeed, FAN_SPEED_RUNE)
 		i++
 	}
 	// Fan target speed
 	for _, fan := range controller.fans {
-		values[i] = fmt.Sprintf("%3d", fan.target_speed)
+		values[i] = fmt.Sprintf("%3d", fan.targetSpeed)
 		i++
 	}
 	values[i] = controller.graph.String()
@@ -128,7 +115,7 @@ func (controller *FanController) print_stats() {
 
 // Helpers
 
-func (controller *FanController) enable_fan_control() {
+func (controller *FanController) enableFanControl() {
 	fmt.Println("Enabling fan control...")
 	attributes := make([]Attribute, len(controller.gpus))
 	i := 0
@@ -137,10 +124,10 @@ func (controller *FanController) enable_fan_control() {
 		attributes[i].value = 1
 		i++
 	}
-	assign_attributes(attributes)
+	assignAttributes(attributes)
 }
 
-func (controller *FanController) disable_fan_control() {
+func (controller *FanController) disableFanControl() {
 	fmt.Println("Disabling fan control...")
 	attributes := make([]Attribute, len(controller.gpus))
 	i := 0
@@ -149,10 +136,10 @@ func (controller *FanController) disable_fan_control() {
 		attributes[id].value = 0
 		i++
 	}
-	assign_attributes(attributes)
+	assignAttributes(attributes)
 }
 
-func (controller *FanController) update_stats() {
+func (controller *FanController) updateStats() {
 	// Build attributes to query
 	attributes := make([]Attribute, len(controller.gpus)+len(controller.fans)*2)
 	i := 0
@@ -166,7 +153,7 @@ func (controller *FanController) update_stats() {
 		i += 2
 	}
 
-	query_attributes(attributes)
+	queryAttributes(attributes)
 
 	// Map returned attributes to metrics
 	i = 0
@@ -176,35 +163,35 @@ func (controller *FanController) update_stats() {
 		i++
 	}
 	for id, fan := range controller.fans {
-		fan.current_speed = attributes[i].value
-		fan.target_speed = attributes[i+1].value
+		fan.currentSpeed = attributes[i].value
+		fan.targetSpeed = attributes[i+1].value
 		controller.fans[id] = fan
 		i += 2
 	}
 }
 
-func (controller *FanController) calculate_target_fan_speeds() {
+func (controller *FanController) calculateTargetFanSpeeds() {
 	for id, fan := range controller.fans {
-		gpu := controller.gpus[fan.gpu_id]
+		gpu := controller.gpus[fan.gpuId]
 
-		speed := interpolate(gpu.temperature, fan.control_curve)
+		speed := interpolate(gpu.temperature, fan.controlCurve)
 		// Limit speed reduction
-		speed = max(fan.current_speed-1, speed)
+		speed = max(fan.currentSpeed-1, speed)
 		// Ensure speed is within 0-100
-		speed = max(fan.min_speed, min(100, speed))
+		speed = max(fan.minSpeed, min(100, speed))
 		// Set target speed
-		fan.target_speed = speed
+		fan.targetSpeed = speed
 		controller.fans[id] = fan
 	}
 }
 
-func (controller *FanController) push_target_fan_speeds() {
+func (controller *FanController) pushTargetFanSpeeds() {
 	attributes := make([]Attribute, len(controller.fans))
 	i := 0
 	for id, fan := range controller.fans {
 		attributes[i].name = fmt.Sprintf("[fan:%d]/GPUTargetFanSpeed", id)
-		attributes[i].value = fan.target_speed
+		attributes[i].value = fan.targetSpeed
 		i++
 	}
-	assign_attributes(attributes)
+	assignAttributes(attributes)
 }
