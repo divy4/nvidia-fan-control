@@ -15,6 +15,7 @@ const DEFAULT_RUNE = ' '
 
 var DIGIT_RUNES = [...]rune{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'}
 
+// Creates an AsciiGraph.
 func createAsciiGraph(
 	minLocation int,
 	maxLocation int,
@@ -29,11 +30,12 @@ func createAsciiGraph(
 		runes:        make([]rune, maxLocation-minLocation+1),
 		runePriority: runePriority,
 	}
-	graph.reset()
+	graph.clear()
 	return graph
 }
 
-func (graph *AsciiGraph) reset() {
+// Clears an AsciiGraph.
+func (graph *AsciiGraph) clear() {
 	// Keep track of how many times the line has been reset
 	graph.iteration++
 	isGridLine := graph.iteration%graph.gridSize == 0
@@ -65,6 +67,7 @@ func (graph *AsciiGraph) reset() {
 	}
 }
 
+// Sets a single rune on an AsciiGraph.
 func (graph *AsciiGraph) setRune(location int, char rune) {
 	index := minMax(graph.min, location, graph.max) - graph.min
 	for _, c := range graph.runePriority {
@@ -83,6 +86,7 @@ func (graph *AsciiGraph) setRune(location int, char rune) {
 	}
 }
 
+// Convert an AsciiGraph into a string.
 func (graph AsciiGraph) String() string {
 	return string(graph.runes)
 }

@@ -18,8 +18,6 @@ type FanControllerGpu struct {
 
 type FanControllerFan struct {
 	gpuId        int
-	minSpeed     int
-	maxSpeed     int
 	currentSpeed int
 	targetSpeed  int
 	// Map of gpu temp -> target fan speed
@@ -31,6 +29,7 @@ const FAN_SPEED_RUNE = ':'
 const GRAPH_RUNE_PRIORITY = "|:"
 const GRID_SIZE = 10
 
+// Creates a FanController object.
 func createFanController(fans map[int]ConfigFan, graphMin int, graphMax int) FanController {
 	controller := FanController{
 		gpus:  map[int]FanControllerGpu{},
@@ -41,15 +40,14 @@ func createFanController(fans map[int]ConfigFan, graphMin int, graphMax int) Fan
 		controller.gpus[fan.GpuId] = FanControllerGpu{}
 		controller.fans[fanId] = FanControllerFan{
 			gpuId:        fan.GpuId,
-			minSpeed:     fan.MinSpeed,
-			maxSpeed:     fan.MaxSpeed,
-			targetSpeed:  fan.MinSpeed,
 			controlCurve: fan.ControlCurve,
 		}
 	}
 	return controller
 }
 
+// Runs a FanController to control fan speed.
+// Note: This function runs infinitely!
 func (controller *FanController) run() {
 	defer controller.disableFanControl()
 	controller.enableFanControl()
@@ -65,6 +63,7 @@ func (controller *FanController) run() {
 
 // I/O
 
+// Prints metrics headers about a FanController.
 func (controller *FanController) printStatsHeaders() {
 	headers := make([]string, len(controller.gpus)+len(controller.fans)*2+1)
 	i := 0
@@ -84,9 +83,10 @@ func (controller *FanController) printStatsHeaders() {
 	fmt.Println(strings.Join(headers, ","))
 }
 
+// Prints metrics about a FanController.
 func (controller *FanController) printStats() {
 	// Reset graph
-	controller.graph.reset()
+	controller.graph.clear()
 
 	values := make([]string, len(controller.gpus)+len(controller.fans)*2+1)
 	i := 0
@@ -115,6 +115,7 @@ func (controller *FanController) printStats() {
 
 // Helpers
 
+// Enables control over all fans within a FanController.
 func (controller *FanController) enableFanControl() {
 	fmt.Println("Enabling fan control...")
 	attributes := make([]Attribute, len(controller.gpus))
@@ -127,6 +128,7 @@ func (controller *FanController) enableFanControl() {
 	assignAttributes(attributes)
 }
 
+// Disables control over all fans within a FanController.
 func (controller *FanController) disableFanControl() {
 	fmt.Println("Disabling fan control...")
 	attributes := make([]Attribute, len(controller.gpus))
@@ -139,6 +141,7 @@ func (controller *FanController) disableFanControl() {
 	assignAttributes(attributes)
 }
 
+// Pulls hardware stats from the real hardware.
 func (controller *FanController) updateStats() {
 	// Build attributes to query
 	attributes := make([]Attribute, len(controller.gpus)+len(controller.fans)*2)
@@ -170,6 +173,8 @@ func (controller *FanController) updateStats() {
 	}
 }
 
+// Calculates what the target fan speed should be for all fans based on current
+// metrics.
 func (controller *FanController) calculateTargetFanSpeeds() {
 	for id, fan := range controller.fans {
 		gpu := controller.gpus[fan.gpuId]
@@ -177,14 +182,13 @@ func (controller *FanController) calculateTargetFanSpeeds() {
 		speed := interpolate(gpu.temperature, fan.controlCurve)
 		// Limit speed reduction
 		speed = max(fan.currentSpeed-1, speed)
-		// Ensure speed is within 0-100
-		speed = max(fan.minSpeed, min(100, speed))
 		// Set target speed
 		fan.targetSpeed = speed
 		controller.fans[id] = fan
 	}
 }
 
+// Pushes target fan speeds to hardware.
 func (controller *FanController) pushTargetFanSpeeds() {
 	attributes := make([]Attribute, len(controller.fans))
 	i := 0

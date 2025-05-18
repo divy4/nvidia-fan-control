@@ -18,7 +18,7 @@ type Attribute struct {
 	value int
 }
 
-// Query Nvidia for any number of GPU attributes
+// Queries Nvidia hardware for any number of GPU attributes.
 func queryAttributes(attributes []Attribute) {
 	// Build command to query everything at once
 	command := make([]string, 1+2*len(attributes))
@@ -53,7 +53,7 @@ func queryAttributes(attributes []Attribute) {
 	}
 }
 
-// Assign any number of GPU attributes to Nvidia
+// Assigns any number of GPU attributes to Nvidia hardware.
 func assignAttributes(attributes []Attribute) {
 	command := make([]string, 1+2*len(attributes))
 	command[0] = BINARY_PATH
@@ -64,7 +64,7 @@ func assignAttributes(attributes []Attribute) {
 	runCommand(command)
 }
 
-// Get a map of all fan IDs and what GPU IDs they belong to.
+// Gets a map of all fan IDs and what GPU IDs they belong to.
 func getFans() map[int]int {
 	command := []string{BINARY_PATH, "--query", "fans"}
 	stdout, _ := runCommand(command)

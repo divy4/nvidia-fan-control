@@ -2,8 +2,6 @@
   "fans": {
     "0": {
       "gpu_id": 0,
-      "min_speed": 35,
-      "max_speed": 100,
       "control_curve": {
         "30": 35,
         "60": 50,
@@ -12,13 +10,15 @@
     },
     "1": {
       "gpu_id": 0,
-      "min_speed": 35,
-      "max_speed": 100,
       "control_curve": {
         "30": 35,
         "60": 50,
         "70": 100
       }
     }
+  },
+  "graph": {
+    "min": 30,
+    "max": 100
   }
 }

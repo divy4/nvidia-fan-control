@@ -12,16 +12,21 @@ const CURVE_TEMP_MAX = 90
 const CURVE_TEMP_MIN = 30
 
 type Config struct {
-	Fans map[int]ConfigFan `json:"fans"`
+	Fans  map[int]ConfigFan `json:"fans"`
+	Graph ConfigGraph       `json:"graph"`
 }
 
 type ConfigFan struct {
 	GpuId        int         `json:"gpu_id"`
-	MinSpeed     int         `json:"min_speed"`
-	MaxSpeed     int         `json:"max_speed"`
 	ControlCurve map[int]int `json:"control_curve"`
 }
 
+type ConfigGraph struct {
+	Min int `json:"min"`
+	Max int `json:"max"`
+}
+
+// Loads a config file
 func loadConfig(configFile string) Config {
 	configText, err := os.ReadFile(configFile)
 	if err != nil {
@@ -40,7 +45,22 @@ func loadConfig(configFile string) Config {
 	return config
 }
 
+// Verifies a config is set correctly
 func sanityCheckConfig(config *Config) {
+	if config.Graph.Max < config.Graph.Min {
+		log.Panicf(
+			"Graph maximum '%d' is less than the graph minimum '%d'.",
+			config.Graph.Min,
+			config.Graph.Max,
+		)
+	} else if config.Graph.Max-config.Graph.Min < 10 {
+		log.Panicf(
+			"Graph minimum '%d' and maximum '%d' are less than 10C away from each other.",
+			config.Graph.Min,
+			config.Graph.Max,
+		)
+	}
+
 	// Build a map of every fan and gpu according to nvidia-settings
 	nvidiaFans := getFans()
 	nvidiaGpus := map[int]bool{}
@@ -48,6 +68,7 @@ func sanityCheckConfig(config *Config) {
 		nvidiaGpus[nvidiaGpuId] = true
 	}
 
+	// For each fan, according to nvidia
 	for nvidiaFanId, _ := range nvidiaFans {
 		// Verify every fan is configured
 		_, ok := config.Fans[nvidiaFanId]
@@ -59,6 +80,7 @@ func sanityCheckConfig(config *Config) {
 		}
 	}
 
+	// For each fan, according to the config
 	for configFanId, configFan := range config.Fans {
 		// Verify every fan configured exists
 		nvidiaGpuId, ok := nvidiaFans[configFanId]
@@ -80,6 +102,15 @@ func sanityCheckConfig(config *Config) {
 			)
 		}
 
+		// Verify at least 1 point has been added to the control curve
+		if len(configFan.ControlCurve) == 0 {
+			log.Panicf(
+				"Fan %d's control curve doesn't contain any points.",
+				configFanId,
+			)
+		}
+
+		// For each point in the control curve, sorted by temperature
 		lastTemp := CURVE_TEMP_MIN
 		lastSpeed := CURVE_SPEED_MIN
 		for _, temp := range getSortedIndexes(&configFan.ControlCurve) {
@@ -149,5 +180,4 @@ func sanityCheckConfig(config *Config) {
 			lastTemp, lastSpeed = temp, speed
 		}
 	}
-	os.Exit(0)
 }

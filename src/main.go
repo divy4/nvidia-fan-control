@@ -12,6 +12,7 @@ func main() {
 
 	// TODO: figure out signal interrupts
 
+	// TODO: Add graph min/max into config
 	controller := createFanController(config.Fans, 30, 100)
 
 	switch command {
@@ -25,6 +26,7 @@ func main() {
 	}
 }
 
+// Parses command line arguments.
 func parseArgs() (string, string) {
 	if len(os.Args) != 3 {
 		printHelp()
@@ -44,6 +46,7 @@ func parseArgs() (string, string) {
 	return command, configFile
 }
 
+// Prints the help message.
 func printHelp() {
 	fmt.Println("Usage: nvidia-fan-control run|stop")
 }

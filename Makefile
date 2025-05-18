@@ -1,5 +1,8 @@
 build:
-	cd src && go build -o ../nvidia-fan-control
+	mkdir build/
+	cd src && go build -o ../build/nvidia-fan-control
 
 run: build
-	sudo ./nvidia-fan-control run config.example.json; sudo ./nvidia-fan-control stop config.example.json
+	sudo build/nvidia-fan-control run config.example.json; sudo build/nvidia-fan-control stop config.example.json
+
+package: build

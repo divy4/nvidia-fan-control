@@ -60,6 +60,7 @@ func minMax(minX int, x int, maxX int) int {
 
 // Lists/Maps
 
+// Returns a sorted list of all keys in a map.
 func getSortedIndexes(data *map[int]int) []int {
 	indexes := make([]int, 0)
 	for key := range *data {
@@ -71,7 +72,7 @@ func getSortedIndexes(data *map[int]int) []int {
 
 // OS
 
-// Execute a command and return stdout, stderr
+// Executes a command and returns stdout, stderr.
 func runCommand(command []string) (string, string) {
 	// Setup command
 	process := exec.Command(command[0], command[1:]...)
@@ -92,7 +93,5 @@ func runCommand(command []string) (string, string) {
 			stderr.String(),
 		)
 	}
-	// Get output (TODO: Remove output)
-	// fmt.Printf("command: %s\n", command)
 	return stdout.String(), stderr.String()
 }
