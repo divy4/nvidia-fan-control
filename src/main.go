@@ -8,12 +8,9 @@ import (
 func main() {
 	command, configFile := parseArgs()
 	config := loadConfig(configFile)
-	fmt.Println(config)
 
 	// TODO: figure out signal interrupts
-
-	// TODO: Add graph min/max into config
-	controller := createFanController(config.Fans, 30, 100)
+	controller := createFanController(&config)
 
 	switch command {
 	case "run":
@@ -48,5 +45,5 @@ func parseArgs() (string, string) {
 
 // Prints the help message.
 func printHelp() {
-	fmt.Println("Usage: nvidia-fan-control run|stop")
+	fmt.Println("Usage: nvidia-fan-control run|stop <config-file>")
 }

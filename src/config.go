@@ -12,8 +12,9 @@ const CURVE_TEMP_MAX = 90
 const CURVE_TEMP_MIN = 30
 
 type Config struct {
-	Fans  map[int]ConfigFan `json:"fans"`
-	Graph ConfigGraph       `json:"graph"`
+	Fans     map[int]ConfigFan `json:"fans"`
+	Graph    ConfigGraph       `json:"graph"`
+	XDisplay int               `json:"x_display"`
 }
 
 type ConfigFan struct {
@@ -62,7 +63,7 @@ func sanityCheckConfig(config *Config) {
 	}
 
 	// Build a map of every fan and gpu according to nvidia-settings
-	nvidiaFans := getFans()
+	nvidiaFans := getFans(config.XDisplay)
 	nvidiaGpus := map[int]bool{}
 	for _, nvidiaGpuId := range nvidiaFans {
 		nvidiaGpus[nvidiaGpuId] = true

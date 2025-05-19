@@ -7,9 +7,10 @@ import (
 )
 
 type FanController struct {
-	gpus  map[int]FanControllerGpu
-	fans  map[int]FanControllerFan
-	graph AsciiGraph
+	gpus     map[int]FanControllerGpu
+	fans     map[int]FanControllerFan
+	graph    AsciiGraph
+	xDisplay int
 }
 
 type FanControllerGpu struct {
@@ -30,13 +31,14 @@ const GRAPH_RUNE_PRIORITY = "|:"
 const GRID_SIZE = 10
 
 // Creates a FanController object.
-func createFanController(fans map[int]ConfigFan, graphMin int, graphMax int) FanController {
+func createFanController(config *Config) FanController {
 	controller := FanController{
-		gpus:  map[int]FanControllerGpu{},
-		fans:  map[int]FanControllerFan{},
-		graph: createAsciiGraph(graphMin, graphMax, GRID_SIZE, GRAPH_RUNE_PRIORITY),
+		gpus:     map[int]FanControllerGpu{},
+		fans:     map[int]FanControllerFan{},
+		graph:    createAsciiGraph(config.Graph.Min, config.Graph.Max, GRID_SIZE, GRAPH_RUNE_PRIORITY),
+		xDisplay: config.XDisplay,
 	}
-	for fanId, fan := range fans {
+	for fanId, fan := range config.Fans {
 		controller.gpus[fan.GpuId] = FanControllerGpu{}
 		controller.fans[fanId] = FanControllerFan{
 			gpuId:        fan.GpuId,
@@ -125,7 +127,7 @@ func (controller *FanController) enableFanControl() {
 		attributes[i].value = 1
 		i++
 	}
-	assignAttributes(attributes)
+	assignAttributes(attributes, controller.xDisplay)
 }
 
 // Disables control over all fans within a FanController.
@@ -138,7 +140,7 @@ func (controller *FanController) disableFanControl() {
 		attributes[id].value = 0
 		i++
 	}
-	assignAttributes(attributes)
+	assignAttributes(attributes, controller.xDisplay)
 }
 
 // Pulls hardware stats from the real hardware.
@@ -156,7 +158,7 @@ func (controller *FanController) updateStats() {
 		i += 2
 	}
 
-	queryAttributes(attributes)
+	queryAttributes(attributes, controller.xDisplay)
 
 	// Map returned attributes to metrics
 	i = 0
@@ -197,5 +199,5 @@ func (controller *FanController) pushTargetFanSpeeds() {
 		attributes[i].value = fan.targetSpeed
 		i++
 	}
-	assignAttributes(attributes)
+	assignAttributes(attributes, controller.xDisplay)
 }

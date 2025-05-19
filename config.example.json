@@ -20,5 +20,6 @@
   "graph": {
     "min": 30,
     "max": 100
-  }
+  },
+  "x_display": 0
 }
