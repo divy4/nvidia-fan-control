@@ -11,7 +11,7 @@ import (
 const BINARY_PATH = "/usr/bin/nvidia-settings"
 
 var ATTRIBUTE_QUERY_LINE_REGEX = regexp.MustCompile(`Attribute '.*' \(.*\): ([0-9]+)\.`)
-var FAN_QUERY_LINE_REGEX = regexp.MustCompile(`([0-9]+)\[fan:([0-9]+)\]`)
+var FAN_QUERY_LINE_REGEX = regexp.MustCompile(`\[fan:([0-9]+)\]`)
 
 type Attribute struct {
 	name  string
@@ -19,13 +19,15 @@ type Attribute struct {
 }
 
 // Queries Nvidia hardware for any number of GPU attributes.
-func queryAttributes(attributes []Attribute) {
+func queryAttributes(attributes []Attribute, xDisplay int) {
 	// Build command to query everything at once
-	command := make([]string, 1+2*len(attributes))
+	command := make([]string, 3+2*len(attributes))
 	command[0] = BINARY_PATH
+	command[1] = "--display"
+	command[2] = strconv.Itoa(xDisplay)
 	for i, attribute := range attributes {
-		command[1+2*i] = "--query"
-		command[2+2*i] = attribute.name
+		command[3+2*i] = "--query"
+		command[4+2*i] = attribute.name
 	}
 
 	// Run command
@@ -54,19 +56,27 @@ func queryAttributes(attributes []Attribute) {
 }
 
 // Assigns any number of GPU attributes to Nvidia hardware.
-func assignAttributes(attributes []Attribute) {
-	command := make([]string, 1+2*len(attributes))
+func assignAttributes(attributes []Attribute, xDisplay int) {
+	command := make([]string, 3+2*len(attributes))
 	command[0] = BINARY_PATH
+	command[1] = "--display"
+	command[2] = strconv.Itoa(xDisplay)
 	for i, attribute := range attributes {
-		command[1+2*i] = "--assign"
-		command[2+2*i] = fmt.Sprintf("%s=%d", attribute.name, attribute.value)
+		command[3+2*i] = "--assign"
+		command[4+2*i] = fmt.Sprintf("%s=%d", attribute.name, attribute.value)
 	}
 	runCommand(command)
 }
 
 // Gets a map of all fan IDs and what GPU IDs they belong to.
-func getFans() map[int]int {
-	command := []string{BINARY_PATH, "--query", "fans"}
+func getFans(xDisplay int) map[int]int {
+	command := []string{
+		BINARY_PATH,
+		"--display",
+		strconv.Itoa(xDisplay),
+		"--query",
+		"fans",
+	}
 	stdout, _ := runCommand(command)
 	lines := strings.Split(stdout, "\n")
 
@@ -79,19 +89,14 @@ func getFans() map[int]int {
 			continue
 		}
 
-		// Get GPU ID from first matching group
-		gpuId, err := strconv.Atoi(matches[1])
+		// Get fan ID from matching group
+		fanId, err := strconv.Atoi(matches[1])
 		if err != nil {
 			log.Panic(err)
 		}
 
-		// Get fan ID from second matching group
-		fanId, err := strconv.Atoi(matches[2])
-		if err != nil {
-			log.Panic(err)
-		}
-
-		fans[fanId] = gpuId
+		// TODO: Support multi-gpu
+		fans[fanId] = 0
 	}
 
 	return fans

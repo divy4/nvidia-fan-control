@@ -1,0 +1,14 @@
+[Unit]
+Description=Nvidia GPU fan controller
+Wants=default.target
+After=default.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+ExecStart=/usr/bin/nvidia-fan-control run /etc/nvidia-fan-control.json
+ExecStopPost=/usr/bin/nvidia-fan-control stop /etc/nvidia-fan-control.json
+
+[Install]
+WantedBy=default.target
