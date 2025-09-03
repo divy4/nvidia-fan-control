@@ -61,7 +61,7 @@ func minMax(minX int, x int, maxX int) int {
 // Lists/Maps
 
 // Returns a sorted list of all keys in a map.
-func getSortedIndexes(data *map[int]int) []int {
+func getSortedKeys(data *map[int]int) []int {
 	indexes := make([]int, 0)
 	for key := range *data {
 		indexes = append(indexes, key)

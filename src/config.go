@@ -114,7 +114,7 @@ func sanityCheckConfig(config *Config) {
 		// For each point in the control curve, sorted by temperature
 		lastTemp := CURVE_TEMP_MIN
 		lastSpeed := CURVE_SPEED_MIN
-		for _, temp := range getSortedIndexes(&configFan.ControlCurve) {
+		for _, temp := range getSortedKeys(&configFan.ControlCurve) {
 			speed, ok := configFan.ControlCurve[temp]
 			if !ok {
 				log.Fatalf("Failed to read control curve data at %d", temp)
