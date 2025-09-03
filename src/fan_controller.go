@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"strings"
 	"time"
 )
@@ -178,12 +179,18 @@ func (controller *FanController) updateStats() {
 // Calculates what the target fan speed should be for all fans based on current
 // metrics.
 func (controller *FanController) calculateTargetFanSpeeds() {
+	// For each gpu...
 	for id, fan := range controller.fans {
 		gpu := controller.gpus[fan.gpuId]
-
+		// Compute the fan speed based on temp
 		speed := interpolate(gpu.temperature, fan.controlCurve)
-		// Limit speed reduction
-		speed = max(fan.currentSpeed-1, speed)
+		// Limit speed slow down to 1% per tick
+		speed = max(speed, fan.currentSpeed-1)
+		// Limit speed to the minimum and maximum possible values on the curve
+		// (because the current fan speed can be outside of this range)
+		min_speed := interpolate(math.MinInt, fan.controlCurve)
+		max_speed := interpolate(math.MaxInt, fan.controlCurve)
+		speed = minMax(min_speed, speed, max_speed)
 		// Set target speed
 		fan.targetSpeed = speed
 		controller.fans[id] = fan
