@@ -29,14 +29,15 @@ type FanControllerFan struct {
 const GPU_TEMP_RUNE = '|'
 const FAN_SPEED_RUNE = ':'
 const GRAPH_RUNE_PRIORITY = "|:"
-const GRID_SIZE = 10
+const GRAPH_GRID_SIZE = 6
+const GRAPH_MERGE_SIZE = 10
 
 // Creates a FanController object.
 func createFanController(config *Config) FanController {
 	controller := FanController{
 		gpus:     map[int]FanControllerGpu{},
 		fans:     map[int]FanControllerFan{},
-		graph:    createAsciiGraph(config.Graph.Min, config.Graph.Max, GRID_SIZE, GRAPH_RUNE_PRIORITY),
+		graph:    createAsciiGraph(config.Graph.Min, config.Graph.Max, GRAPH_GRID_SIZE, GRAPH_MERGE_SIZE, GRAPH_RUNE_PRIORITY),
 		xDisplay: config.XDisplay,
 	}
 	for fanId, fan := range config.Fans {
@@ -88,8 +89,8 @@ func (controller *FanController) printStatsHeaders() {
 
 // Prints metrics about a FanController.
 func (controller *FanController) printStats() {
-	// Reset graph
-	controller.graph.clear()
+	// Move graph to next line
+	controller.graph.next_line()
 
 	values := make([]string, len(controller.gpus)+len(controller.fans)*2+1)
 	i := 0
@@ -111,9 +112,12 @@ func (controller *FanController) printStats() {
 		values[i] = fmt.Sprintf("%3d", fan.targetSpeed)
 		i++
 	}
-	values[i] = controller.graph.String()
-	// Join it all into 1 string
-	fmt.Println(strings.Join(values, ","))
+
+	if controller.graph.ready() {
+		values[i] = controller.graph.String()
+		// Join it all into 1 string
+		fmt.Println(strings.Join(values, ","))
+	}
 }
 
 // Helpers

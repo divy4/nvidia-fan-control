@@ -2,6 +2,7 @@ package main
 
 type AsciiGraph struct {
 	gridSize     int
+	mergeSize    int
 	iteration    int
 	min          int
 	max          int
@@ -20,25 +21,33 @@ func createAsciiGraph(
 	minLocation int,
 	maxLocation int,
 	gridSize int,
+	mergeSize int,
 	runePriority string,
 ) AsciiGraph {
 	graph := AsciiGraph{
 		gridSize:     gridSize,
-		iteration:    -2,
+		mergeSize:    mergeSize,
+		iteration:    -1,
 		min:          minLocation,
 		max:          maxLocation,
 		runes:        make([]rune, maxLocation-minLocation+1),
 		runePriority: runePriority,
 	}
-	graph.clear()
+	graph.next_line()
 	return graph
 }
 
 // Clears an AsciiGraph.
-func (graph *AsciiGraph) clear() {
+func (graph *AsciiGraph) next_line() {
 	// Keep track of how many times the line has been reset
 	graph.iteration++
-	isGridLine := graph.iteration%graph.gridSize == 0
+	// Only clear the graph once very mergeSize times
+	if graph.iteration % graph.mergeSize != 0 {
+		return
+	}
+
+	// And make it a grid line once every mergeSize * gridSize times
+	isGridLine := graph.iteration % (graph.mergeSize * graph.gridSize) == 0
 
 	size := graph.max - graph.min + 1
 
@@ -84,6 +93,11 @@ func (graph *AsciiGraph) setRune(location int, char rune) {
 			}
 		}
 	}
+}
+
+// Check if the currnet line is a line where the graph should print
+func (graph AsciiGraph) ready() bool {
+	return graph.iteration % graph.mergeSize == graph.mergeSize - 1
 }
 
 // Convert an AsciiGraph into a string.
